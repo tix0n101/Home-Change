@@ -1,0 +1,22 @@
+### Проверка, что сервер работает
+GET http://127.0.0.1:5000/
+
+### Регистрация пользователя
+POST http://127.0.0.1:5000/api/register
+Content-Type: application/json
+
+{
+  "name": "Иван",
+  "email": "ivan@test.ru",
+  "password": "12345",
+  "role": "tenant"
+}
+
+### Вход
+POST http://127.0.0.1:5000/api/login
+Content-Type: application/json
+
+{
+  "email": "ivan@test.ru",
+  "password": "12345"
+}
