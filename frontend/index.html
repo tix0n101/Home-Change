@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home-Change — обмен квартирами</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header__inner">
+      <a href="#" class="logo" id="logo">
+        <span class="logo__mark">HC</span>
+        <span class="logo__text">Home-Change</span>
+      </a>
+
+      <nav class="nav" id="nav">
+        <button class="nav__link" data-view="listings">Объявления</button>
+        <button class="nav__link" data-view="matches">Подбор</button>
+        <button class="nav__link" data-view="requests">Заявки</button>
+        <button class="nav__link" data-view="messages">Сообщения</button>
+        <button class="nav__link" data-view="my">Мои квартиры</button>
+      </nav>
+
+      <div class="header__user" id="headerUser"></div>
+    </div>
+  </header>
+
+  <main id="app" class="main"></main>
+
+  <div id="modalRoot"></div>
+  <div id="toast" class="toast"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
