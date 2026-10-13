@@ -1,0 +1,238 @@
+@host = http://127.0.0.1:5000
+
+### Проверка, что сервер работает
+GET {{host}}/
+
+
+############################################################
+# АУТЕНТИФИКАЦИЯ
+############################################################
+
+### Регистрация пользователя 1 (Иван, арендодатель)
+# @name registerIvan
+POST {{host}}/api/register
+Content-Type: application/json
+
+{
+  "name": "Иван",
+  "email": "ivan@test.ru",
+  "password": "12345",
+  "role": "landlord"
+}
+
+### Регистрация пользователя 2 (Пётр, арендодатель)
+# @name registerPetr
+POST {{host}}/api/register
+Content-Type: application/json
+
+{
+  "name": "Пётр",
+  "email": "petr@test.ru",
+  "password": "12345",
+  "role": "landlord"
+}
+
+### Вход (Иван)
+# @name loginIvan
+POST {{host}}/api/login
+Content-Type: application/json
+
+{
+  "email": "ivan@test.ru",
+  "password": "12345"
+}
+
+### Вход (Пётр)
+# @name loginPetr
+POST {{host}}/api/login
+Content-Type: application/json
+
+{
+  "email": "petr@test.ru",
+  "password": "12345"
+}
+
+### Токены (подставляются автоматически из ответов выше)
+@tokenIvan = {{loginIvan.response.body.token}}
+@tokenPetr = {{loginPetr.response.body.token}}
+
+
+############################################################
+# КВАРТИРЫ
+############################################################
+
+### Добавить квартиру (Иван)
+# @name createAptIvan
+POST {{host}}/api/apartments
+Content-Type: application/json
+Authorization: Bearer {{tokenIvan}}
+
+{
+  "title": "2-комнатная в Москве",
+  "description": "Уютная квартира рядом с метро",
+  "city": "Москва",
+  "district": "ЦАО",
+  "address": "ул. Тверская, 10",
+  "rooms": 2,
+  "area": 55,
+  "floor": 5,
+  "floors": 9,
+  "price": 9000000,
+  "image": ""
+}
+
+### Добавить квартиру (Пётр)
+# @name createAptPetr
+POST {{host}}/api/apartments
+Content-Type: application/json
+Authorization: Bearer {{tokenPetr}}
+
+{
+  "title": "2-комнатная в Москве (Пётр)",
+  "description": "Светлая квартира с ремонтом",
+  "city": "Москва",
+  "district": "САО",
+  "address": "Ленинградский пр-т, 20",
+  "rooms": 2,
+  "area": 58,
+  "floor": 3,
+  "floors": 12,
+  "price": 9500000,
+  "image": ""
+}
+
+@aptIvan = {{createAptIvan.response.body.apartment.id}}
+@aptPetr = {{createAptPetr.response.body.apartment.id}}
+
+### Список всех активных квартир
+GET {{host}}/api/apartments
+
+### Список квартир с фильтрами
+GET {{host}}/api/apartments?city=Москва&rooms=2&min_price=1000000&max_price=10000000
+
+### Мои квартиры (Иван)
+GET {{host}}/api/apartments/my
+Authorization: Bearer {{tokenIvan}}
+
+### Получить квартиру по id
+GET {{host}}/api/apartments/{{aptIvan}}
+
+### Обновить квартиру (владелец)
+PUT {{host}}/api/apartments/{{aptIvan}}
+Content-Type: application/json
+Authorization: Bearer {{tokenIvan}}
+
+{
+  "title": "2-комнатная в Москве (обновлено)",
+  "price": 8500000,
+  "status": "active"
+}
+
+### Удалить чужую квартиру (должно вернуть 403)
+DELETE {{host}}/api/apartments/{{aptPetr}}
+Authorization: Bearer {{tokenIvan}}
+
+
+############################################################
+# ПОДБОР СОВПАДЕНИЙ (МАТЧИ)
+############################################################
+
+### Матчи для конкретной квартиры
+GET {{host}}/api/matches?apartment_id={{aptIvan}}
+Authorization: Bearer {{tokenIvan}}
+
+### Матчи по всем квартирам пользователя
+GET {{host}}/api/matches
+Authorization: Bearer {{tokenIvan}}
+
+
+############################################################
+# ЗАЯВКИ НА ОБМЕН
+############################################################
+
+### Создать заявку на обмен (Иван -> квартира Петра)
+# @name createRequest
+POST {{host}}/api/requests
+Content-Type: application/json
+Authorization: Bearer {{tokenIvan}}
+
+{
+  "apartment_id": {{aptIvan}},
+  "target_apartment_id": {{aptPetr}},
+  "message": "Давай меняться!"
+}
+
+@requestId = {{createRequest.response.body.request.id}}
+
+### Входящие заявки (Пётр — владелец целевой квартиры)
+GET {{host}}/api/requests
+Authorization: Bearer {{tokenPetr}}
+
+### Отправленные заявки (Иван)
+GET {{host}}/api/requests/sent
+Authorization: Bearer {{tokenIvan}}
+
+### Получить заявку по id
+GET {{host}}/api/requests/{{requestId}}
+Authorization: Bearer {{tokenIvan}}
+
+### Принять заявку (владелец целевой квартиры)
+PUT {{host}}/api/requests/{{requestId}}/status
+Content-Type: application/json
+Authorization: Bearer {{tokenPetr}}
+
+{
+  "status": "accepted"
+}
+
+### Отклонить заявку
+PUT {{host}}/api/requests/{{requestId}}/status
+Content-Type: application/json
+Authorization: Bearer {{tokenPetr}}
+
+{
+  "status": "rejected"
+}
+
+### Удалить (отменить) заявку (автор заявки)
+DELETE {{host}}/api/requests/{{requestId}}
+Authorization: Bearer {{tokenIvan}}
+
+
+############################################################
+# СООБЩЕНИЯ
+############################################################
+
+### Отправить сообщение (Иван -> Пётр)
+# @name sendMessage
+POST {{host}}/api/messages
+Content-Type: application/json
+Authorization: Bearer {{tokenIvan}}
+
+{
+  "receiver_id": 2,
+  "text": "Здравствуйте! Интересует обмен?"
+}
+
+@messageId = {{sendMessage.response.body.data.id}}
+
+### Входящие сообщения (Пётр)
+GET {{host}}/api/messages/inbox
+Authorization: Bearer {{tokenPetr}}
+
+### Диалог между Иваном и Петром (id Петра = 2)
+GET {{host}}/api/messages/conversation/2
+Authorization: Bearer {{tokenIvan}}
+
+### Отметить сообщение прочитанным (получатель)
+PUT {{host}}/api/messages/{{messageId}}/read
+Authorization: Bearer {{tokenPetr}}
+
+
+############################################################
+# ОЧИСТКА
+############################################################
+
+### Удалить квартиру Петра
+DELETE {{host}}/api/apartments/{{aptPetr}}
+Authorization: Bearer {{tokenPetr}}
