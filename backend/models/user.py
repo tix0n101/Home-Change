@@ -10,7 +10,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), default="tenant")  # tenant / landlord
     rating = db.Column(db.Float, default=0.0)
-    created_at = db.Column(db.DateTime, default=datetime.date)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
         return {
